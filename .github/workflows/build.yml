@@ -1,7 +1,6 @@
 name: Docker
 
-on:
-    push:
+on: [ push ]
 
 jobs:
     build:
@@ -43,14 +42,14 @@ jobs:
                   tags: ${{ steps.meta.outputs.tags }}
                   labels: ${{ steps.meta.outputs.labels }}
 
-  deploy:
-    needs:
-      - build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Deploy
-        uses: fjogeleit/http-request-action@v1
-        with:
-          url: 'https://watchtower.topi.wtf/v1/update'
-          method: 'POST'
-          customHeaders: '{"Authorization": "Bearer ${{ secrets.TOKEN }}"}'
+    deploy:
+        needs:
+            - build
+        runs-on: ubuntu-latest
+        steps:
+            - name: Deploy
+              uses: fjogeleit/http-request-action@v1
+              with:
+                url: 'https://watchtower.topi.wtf/v1/update'
+                method: 'POST'
+                customHeaders: '{"Authorization": "Bearer ${{ secrets.TOKEN }}"}'
