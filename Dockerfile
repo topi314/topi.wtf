@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-RUN npx nuxi generate
+RUN npm run build
 
 FROM node:18-alpine
 
