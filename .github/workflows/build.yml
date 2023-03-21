@@ -59,6 +59,6 @@ jobs:
             - name: Deploy
               uses: fjogeleit/http-request-action@v1
               with:
-                url: 'https://watchtower.topi.wtf/v1/update'
+                url: 'https://watchtower.topi.wtf/v1/update?image=ghcr.io/topisenpai/topi.wtf'
                 method: 'POST'
                 customHeaders: '{"Authorization": "Bearer ${{ secrets.TOKEN }}"}'

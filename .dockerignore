@@ -1,4 +1,6 @@
-.git/
+.github/
 .gitignore
-.nuxt/
-node_modules/
+README.md
+LICENSE
+Dockerfile
+config.json

@@ -1,0 +1,18 @@
+<div class="blog">
+    {{ range $post := .Blog.Posts }}
+        <div class="post">
+            <h2>{{ $post.Title }}</h2>
+            <pre><code class="ch-chroma">{{ $post.Content }}</code></pre>
+            <p class="date">{{ $post.CreatedAt }}</p>
+
+            <div class="comments">
+                {{ range $comment := $post.Comments }}
+                    <div class="comment">
+                        <span class="commenter">{{ $comment.Author }}</span>
+                        <p class="comment">{{ $comment.Content }}</p>
+                    </div>
+                {{ end }}
+            </div>
+        </div>
+    {{ end }}
+</div>

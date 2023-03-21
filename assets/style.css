@@ -1,0 +1,225 @@
+:root {
+    --bg-error: #a65757;
+    --text-error: #fff;
+}
+
+.dark {
+    --bg-primary: #282c34;
+    --bg-secondary: #1f2228;
+    --nav-button-bg: #373b41;
+    --text-primary: #c8cdd3;
+    --text-secondary: #828997;
+    --bg-scrollbar: #373b41;
+    --bg-scrollbar-thumb: #1f2228;
+    --bg-scrollbar-thumb-hover: #232529;
+
+    --arrow-down: url("/assets/icons/dark/arrow-down.png");
+    --copy: url("/assets/icons/dark/copy.png");
+    --delete: url("/assets/icons/dark/delete.png");
+    --edit: url("/assets/icons/dark/edit.png");
+    --github: url("/assets/icons/dark/github.svg");
+    --save: url("/assets/icons/dark/save.png");
+    --share: url("/assets/icons/dark/share.png");
+    --close: url("/assets/icons/dark/close.png");
+    --theme: url("/assets/icons/dark/theme.png");
+}
+
+.light {
+    --bg-primary: #fafafa;
+    --bg-secondary: #ebecef;
+    --nav-button-bg: #d1d5da;
+    --text-primary: #282c34;
+    --text-secondary: #1f2228;
+    --bg-scrollbar: #ebecef;
+    --bg-scrollbar-thumb: #d4d5dc;
+    --bg-scrollbar-thumb-hover: #c3c8ce;
+
+    --arrow-down: url("/assets/icons/light/arrow-down.png");
+    --copy: url("/assets/icons/light/copy.png");
+    --delete: url("/assets/icons/light/delete.png");
+    --edit: url("/assets/icons/light/edit.png");
+    --github: url("/assets/icons/light/github.svg");
+    --save: url("/assets/icons/light/save.png");
+    --share: url("/assets/icons/light/share.png");
+    --close: url("/assets/icons/light/close.png");
+    --theme: url("/assets/icons/light/theme.png");
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+html {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+body {
+    height: 100vh;
+    padding: 0;
+    margin: 0;
+    font-family: monospace;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+header {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+}
+
+header div {
+    display: flex;
+    gap: 1rem;
+}
+
+header a {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin: 0;
+    padding: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
+.icon-btn {
+    flex-shrink: 0;
+    border: none;
+    border-radius: 1rem;
+    width: 2rem;
+    height: 2rem;
+    background-color: var(--nav-button-bg);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 1rem;
+    cursor: pointer;
+    color: var(--text-primary);
+}
+
+.icon-btn:hover {
+    filter: opacity(0.7);
+}
+
+.icon-btn:disabled {
+    cursor: not-allowed;
+    filter: opacity(0.2);
+}
+
+#github {
+    background-image: var(--github);
+}
+
+#theme-toggle {
+    display: none;
+}
+
+#theme-toggle + label {
+    background-image: var(--theme);
+}
+
+main {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+    "home blog projects about"
+    "content content content content";
+    flex-grow: 1;
+    padding: 1rem;
+}
+
+main > input[type="radio"] {
+    display: none;
+}
+
+main > input[type="radio"] + label {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+main > input[type="radio"]:hover + label {
+    filter: opacity(0.7);
+}
+main > input[type="radio"]:checked + label {
+    filter: opacity(0.6);
+}
+
+main > input[type="radio"] ~ .nav {
+    display: none
+}
+
+.nav.home {
+    grid-area: home;
+}
+
+.nav.blog {
+    grid-area: blog;
+}
+
+.nav.projects {
+    grid-area: projects;
+}
+
+.nav.about {
+    grid-area: about;
+}
+
+#nav-home:checked ~ .nav.home,
+#nav-blog:checked ~ .nav.blog,
+#nav-projects:checked ~ .nav.projects,
+#nav-about:checked ~ .nav.about {
+    display: block;
+    grid-area: content;
+    padding: 1rem;
+}
+
+.blog {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.post {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 1rem;
+}
+
+.comments {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.comment {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
+pre code {
+    display: block;
+    padding: 1rem;
+}
+
+footer {
+    text-align: center;
+}
+
+footer a {
+    color: inherit;
+    text-decoration: none;
+}
+

@@ -1,27 +1,27 @@
-FROM node:18-alpine as BUILD
+FROM --platform=$BUILDPLATFORM golang:1.20-alpine AS build
 
 WORKDIR /build
 
-COPY package*.json ./
+COPY go.mod go.sum ./
 
-RUN npm ci
+RUN go mod download
 
 COPY . .
 
-RUN npm run build
+ARG TARGETOS
+ARG TARGETARCH
+ARG VERSION
+ARG COMMIT
+ARG BUILD_TIME
 
-FROM node:18-alpine
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg \
+    CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH go build -ldflags="-X 'main.version=$VERSION' -X 'main.commit=$COMMIT' -X 'main.buildTime=$BUILD_TIME'" -o topi.wtf github.com/topisenpai/topi.wtf
 
-RUN apk add --no-cache dumb-init
+FROM alpine
 
-COPY --from=BUILD /build/.output /app
+COPY --from=build /build/topi.wtf /bin/topi.wtf
 
-EXPOSE 8080
+EXPOSE 80
 
-ENV HOST=0.0.0.0
-ENV PORT=8080
-ENV NODE_ENV=production
-
-ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-
-CMD ["node", "/app/server/index.mjs"]
+ENTRYPOINT ["/bin/topi.wtf"]
