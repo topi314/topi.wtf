@@ -47,7 +47,8 @@ type Project struct {
 	URL         template.URL
 	Stars       int
 	Forks       int
-	Languages   []Language
+	UpdatedAt   time.Time
+	Language    *Language
 	Topics      []Topic
 }
 

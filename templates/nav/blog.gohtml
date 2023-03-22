@@ -2,25 +2,26 @@
 	<div class="post">
 		<div class="post__header">
 			<h2>{{ $post.Title }}</h2>
-			<span>{{ humanizeTime $post.CreatedAt }}</span>
+			<span class="time" title="{{ $post.CreatedAt }}">{{ humanizeTime $post.CreatedAt }}</span>
 		</div>
 		<pre><code class="ch-chroma">{{ $post.Content }}</code></pre>
 
 		<input id="comments-{{ $index }}" class="comments__show" type="checkbox">
 		<label for="comments-{{ $index }}">
-			<span>{{ len $post.Comments }} Comments</span>
 			<span>Show Comments</span>
 		</label>
 
 		<ul class="comments">
             {{ range $comment := $post.Comments }}
 				<li class="comment">
-					<a class="comment__author" href="https://github.com/{{ $comment.Author }}" target="_blank">
-						<img src="{{ $comment.AvatarURL }}" alt="{{ $comment.Author }}"/>
-						<span>{{ $comment.Author }}</span>
+					<div class="comment__author">
+						<a href="https://github.com/{{ $comment.Author }}" target="_blank">
+							<img src="{{ $comment.AvatarURL }}" alt="{{ $comment.Author }}"/>
+							<span>{{ $comment.Author }}</span>
+						</a>
 
-						<span>{{ humanizeTime $comment.CreatedAt }}</span>
-					</a>
+						<span class="time" title="{{ $comment.CreatedAt }}">{{ humanizeTime $comment.CreatedAt }}</span>
+					</div>
 					<pre><code class="ch-chroma">{{ $comment.Content }}</code></pre>
 				</li>
             {{ end }}

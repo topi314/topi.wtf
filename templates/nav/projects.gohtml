@@ -1,27 +1,37 @@
 {{ range $index, $project := .Projects }}
-	<div class="project">
-		<div class="project__name">
-			<span class="icon"></span>
-			<a href="{{ $project.URL }}">{{ $project.Name }}</a>
-		</div>
-		<p class="project__description">
+    <div class="project">
+        <div class="project__name">
+            <span class="icon"></span>
+            <a href="{{ $project.URL }}">{{ $project.Name }}</a>
+        </div>
+        <p class="project__description">
             {{ $project.Description }}
-		</p>
-		<div class="project__details">
-			<div class="project__stars">
-				<span class="icon"></span>
-				<span>{{ $project.Stars }}</span>
-			</div>
-
-			<div class="project__forks">
-				<span class="icon"></span>
-				<span>{{ $project.Forks }}</span>
-			</div>
-		</div>
-		<div class="project__topics">
-            {{ range $index, $topic := $project.Topics }}
-				<a class="project__topic" href="{{ $topic.URL }}" target="_blank">{{ $topic.Name }}</a>
+        </p>
+        <div class="project__details">
+            {{ if $project.Language.Name }}
+                <div class="project__language">
+                    <span class="icon" style="background-color:{{ $project.Language.Color }}"></span>
+                    <span>{{ $project.Language.Name }}</span>
+                </div>
             {{ end }}
-		</div>
-	</div>
+            <div class="project__stars">
+                <span class="icon"></span>
+                <span>{{ $project.Stars }}</span>
+            </div>
+            <div class="project__forks">
+                <span class="icon"></span>
+                <span>{{ $project.Forks }}</span>
+            </div>
+            <div class="project__updated">
+                <span class="time">Updated {{ humanizeTime $project.UpdatedAt }}</span>
+            </div>
+        </div>
+        {{ if $project.Topics }}
+            <div class="project__topics">
+                {{ range $index, $topic := $project.Topics }}
+                    <a class="project__topic" href="{{ $topic.URL }}" target="_blank">{{ $topic.Name }}</a>
+                {{ end }}
+            </div>
+        {{ end }}
+    </div>
 {{ end }}

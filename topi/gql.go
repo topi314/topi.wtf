@@ -52,6 +52,7 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 					Description      string
 					StargazerCount   int
 					ForkCount        int
+					UpdatedAt        time.Time
 					RepositoryTopics struct {
 						Nodes []struct {
 							Topic struct {
@@ -65,9 +66,9 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 							Name  string
 							Color string
 						}
-					} `graphql:"languages(first: $languages)"`
+					} `graphql:"languages(first: 1, orderBy: {field: SIZE, direction: DESC})"`
 				}
-			} `graphql:"repositories(first: $repositories, orderBy: {field: STARGAZERS, direction: DESC})"`
+			} `graphql:"repositories(first: $repositories, orderBy: {field: UPDATED_AT, direction: DESC})"`
 		} `graphql:"user(login: $user)"`
 		Repository struct {
 			Discussions struct {
@@ -97,7 +98,6 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		"name":         githubv4.String(s.cfg.Blog.Repository),
 		"category":     s.categoryID,
 		"repositories": githubv4.Int(10),
-		"languages":    githubv4.Int(10),
 		"topics":       githubv4.Int(10),
 		"discussions":  githubv4.Int(10),
 		"comments":     githubv4.Int(10),
@@ -140,12 +140,13 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 
 	projects := make([]Project, 0, len(query.User.Repositories.Nodes))
 	for _, node := range query.User.Repositories.Nodes {
-		languages := make([]Language, 0, len(node.Languages.Nodes))
-		for _, lNode := range node.Languages.Nodes {
-			languages = append(languages, Language{
+		var language *Language
+		if len(node.Languages.Nodes) > 0 {
+			lNode := node.Languages.Nodes[0]
+			language = &Language{
 				Name:  lNode.Name,
 				Color: lNode.Color,
-			})
+			}
 		}
 
 		topics := make([]Topic, 0, len(node.RepositoryTopics.Nodes))
@@ -162,7 +163,8 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 			URL:         template.URL(node.URL),
 			Stars:       node.StargazerCount,
 			Forks:       node.ForkCount,
-			Languages:   languages,
+			UpdatedAt:   node.UpdatedAt,
+			Language:    language,
 			Topics:      topics,
 		})
 	}
