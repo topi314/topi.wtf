@@ -1,6 +1,5 @@
 package topi
 
-import "C"
 import (
 	"fmt"
 	"strings"

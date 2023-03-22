@@ -1,0 +1,51 @@
+.post {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background-color: var(--bg-secondary);
+    border-radius: 1rem;
+}
+
+.post__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.comments__show {
+    display: none;
+}
+
+.comments__show + label + .comments {
+    display: none;
+    overflow: hidden;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.comments__show:checked + label + .comments {
+    display: flex;
+}
+
+.comment {
+    display: flex;
+    flex-direction: column;
+    background-color: var(--bg-primary);
+    padding: 1rem;
+    border-radius: 1rem;
+}
+
+.comment__author {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    font-weight: 600;
+    text-decoration: none;
+    color: inherit;
+}
+
+.comment__author img {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+}

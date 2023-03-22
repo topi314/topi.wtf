@@ -14,6 +14,7 @@ import (
 	"syscall"
 
 	"github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/dustin/go-humanize"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shurcooL/githubv4"
 	"github.com/spf13/viper"
@@ -62,7 +63,7 @@ func main() {
 	}); err != nil {
 		log.Fatalln("Error while unmarshalling config:", err)
 	}
-	log.Println("Config:", cfg)
+	log.Println("Config2:", cfg)
 
 	if cfg.Debug {
 		log.SetFlags(log.LstdFlags | log.Lshortfile)
@@ -72,17 +73,22 @@ func main() {
 		tmplFunc topi.ExecuteTemplateFunc
 		assets   http.FileSystem
 	)
+
+	funcs := template.FuncMap{
+		"humanizeTime": humanize.Time,
+	}
+
 	if cfg.DevMode {
 		log.Println("Development mode enabled")
 		tmplFunc = func(wr io.Writer, name string, data any) error {
-			tmpl := template.New("")
+			tmpl := template.New("").Funcs(funcs)
 			tmpl = template.Must(tmpl.ParseGlob("templates/*.gohtml"))
 			tmpl = template.Must(tmpl.ParseGlob("templates/*/*.gohtml"))
 			return tmpl.ExecuteTemplate(wr, name, data)
 		}
 		assets = http.Dir(".")
 	} else {
-		tmpl := template.New("")
+		tmpl := template.New("").Funcs(funcs)
 		tmpl = template.Must(tmpl.ParseFS(Templates, "templates/*.gohtml"))
 		tmpl = template.Must(tmpl.ParseFS(Templates, "templates/*/*.gohtml"))
 		tmplFunc = tmpl.ExecuteTemplate

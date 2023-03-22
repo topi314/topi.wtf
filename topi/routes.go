@@ -1,19 +1,14 @@
 package topi
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"strings"
-	"sync"
 
-	"github.com/alecthomas/chroma/v2"
-	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -70,72 +65,26 @@ func cacheKeyFunc(r *http.Request) uint64 {
 }
 
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {
-	var dark bool
-	themeCookie, _ := r.Cookie("theme")
-	if themeCookie != nil && themeCookie.Value == "dark" {
-		dark = true
-	}
-
-	blog, github, err := s.GetData(r.Context())
+	vars, err := s.FetchData(r.Context())
 	if err != nil {
-		s.prettyError(w, r, fmt.Errorf("failed to fetch posts: %w", err), http.StatusInternalServerError)
+		s.prettyError(w, r, fmt.Errorf("failed to fetch data: %w", err), http.StatusInternalServerError)
 		return
 	}
 
 	style := StyleDark
-	if !dark {
-		style = StyleLight
+	themeCookie, _ := r.Cookie("theme")
+	if themeCookie != nil {
+		vars.Dark = themeCookie.Value == "dark"
+		if !vars.Dark {
+			style = StyleLight
+		}
 	}
 
-	var wg sync.WaitGroup
-	for i, post := range blog.Posts {
-		wg.Add(1)
-		go func(i int, post Post) {
-			defer wg.Done()
-			htmlBuff := new(bytes.Buffer)
-			for ii, comment := range post.Comments {
-				var iterator chroma.Iterator
-				iterator, err = lexers.Markdown.Tokenise(nil, comment.Body)
-				if err != nil {
-					s.prettyError(w, r, fmt.Errorf("failed to tokenize comment: %w", err), http.StatusInternalServerError)
-					return
-				}
-				if err = s.htmlFormatter.Format(htmlBuff, style, iterator); err != nil {
-					s.prettyError(w, r, fmt.Errorf("failed to format comment: %w", err), http.StatusInternalServerError)
-					return
-				}
-				post.Comments[ii].Content = template.HTML(htmlBuff.String())
-				htmlBuff.Reset()
-			}
-
-			var iterator chroma.Iterator
-			iterator, err = lexers.Markdown.Tokenise(nil, post.Body)
-			if err != nil {
-				s.prettyError(w, r, fmt.Errorf("failed to tokenize post: %w", err), http.StatusInternalServerError)
-				return
-			}
-			if err = s.htmlFormatter.Format(htmlBuff, style, iterator); err != nil {
-				s.prettyError(w, r, fmt.Errorf("failed to format post: %w", err), http.StatusInternalServerError)
-				return
-			}
-			blog.Posts[i].Content = template.HTML(htmlBuff.String())
-			htmlBuff.Reset()
-		}(i, post)
-	}
-	wg.Wait()
-
-	cssBuff := new(bytes.Buffer)
-	if err = s.htmlFormatter.WriteCSS(cssBuff, style); err != nil {
-		s.prettyError(w, r, fmt.Errorf("failed to write css: %w", err), http.StatusInternalServerError)
+	if err = s.HighlightData(vars, style); err != nil {
+		s.prettyError(w, r, fmt.Errorf("failed to highlight data: %w", err), http.StatusInternalServerError)
 		return
 	}
 
-	vars := Variables{
-		Blog:   *blog,
-		GitHub: *github,
-		Dark:   dark,
-		CSS:    template.CSS(cssBuff.String()),
-	}
 	if err = s.tmpl(w, "index.gohtml", vars); err != nil {
 		log.Println("failed to execute template:", err)
 	}

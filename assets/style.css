@@ -4,10 +4,10 @@
 }
 
 .dark {
-    --bg-primary: #282c34;
-    --bg-secondary: #1f2228;
-    --nav-button-bg: #373b41;
-    --text-primary: #c8cdd3;
+    --bg-primary: #131b26;
+    --bg-secondary: #0d1117;
+    --nav-button-bg: #172231;
+    --text-primary: #d3d8dd;
     --text-secondary: #828997;
     --bg-scrollbar: #373b41;
     --bg-scrollbar-thumb: #1f2228;
@@ -22,6 +22,9 @@
     --share: url("/assets/icons/dark/share.png");
     --close: url("/assets/icons/dark/close.png");
     --theme: url("/assets/icons/dark/theme.png");
+    --star: url("/assets/icons/dark/star.png");
+    --book: url("/assets/icons/dark/book.png");
+    --fork: url("/assets/icons/dark/fork.png");
 }
 
 .light {
@@ -43,6 +46,9 @@
     --share: url("/assets/icons/light/share.png");
     --close: url("/assets/icons/light/close.png");
     --theme: url("/assets/icons/light/theme.png");
+    --star: url("/assets/icons/light/star.png");
+    --book: url("/assets/icons/light/book.png");
+    --fork: url("/assets/icons/light/fork.png");
 }
 
 *,
@@ -57,16 +63,19 @@ html {
 }
 
 body {
-    height: 100vh;
+    min-height: 100vh;
     padding: 0;
     margin: 0;
     font-family: monospace;
-    overflow: hidden;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
 }
 
 header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
     display: flex;
     justify-content: center;
     gap: 1rem;
@@ -86,6 +95,17 @@ header a {
     padding: 0;
     text-decoration: none;
     color: inherit;
+}
+
+.icon {
+    flex-shrink: 0;
+    border: none;
+    border-radius: 1rem;
+    width: 2rem;
+    height: 2rem;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 2rem;
 }
 
 .icon-btn {
@@ -125,7 +145,7 @@ header a {
 
 main {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     grid-template-rows: auto 1fr;
     grid-template-areas:
     "home blog projects about"
@@ -148,70 +168,47 @@ main > input[type="radio"] + label {
 main > input[type="radio"]:hover + label {
     filter: opacity(0.7);
 }
+
 main > input[type="radio"]:checked + label {
     filter: opacity(0.6);
 }
 
-main > input[type="radio"] ~ .nav {
-    display: none
+main > input[type="radio"]:checked + label::after {
+    content: "";
+    display: block;
+    width: 100%;
+    height: 0.2rem;
+    background-color: var(--text-primary);
+    margin-top: 0.5rem;
 }
 
-.nav.home {
-    grid-area: home;
+.nav {
+    display: none;
+    grid-area: content;
+    gap: 1rem;
 }
 
-.nav.blog {
-    grid-area: blog;
-}
-
-.nav.projects {
-    grid-area: projects;
-}
-
-.nav.about {
-    grid-area: about;
+.nav > div {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 40rem;
+    margin: 0 auto;
 }
 
 #nav-home:checked ~ .nav.home,
 #nav-blog:checked ~ .nav.blog,
 #nav-projects:checked ~ .nav.projects,
 #nav-about:checked ~ .nav.about {
-    display: block;
-    grid-area: content;
+    display: flex;
     padding: 1rem;
-}
-
-.blog {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.post {
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    background-color: var(--bg-secondary);
-    border-radius: 1rem;
-}
-
-.comments {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-}
-
-.comment {
-    display: flex;
-    flex-direction: column;
-    background-color: var(--bg-primary);
-    padding: 1rem;
-    border-radius: 1rem;
 }
 
 pre code {
     display: block;
     padding: 1rem;
+    overflow-x: auto;
+    border-radius: 1rem;
 }
 
 footer {

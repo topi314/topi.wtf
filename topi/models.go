@@ -6,14 +6,17 @@ import (
 )
 
 type Variables struct {
-	Blog   Blog
-	GitHub GitHub
-	Dark   bool
-	CSS    template.CSS
+	User     User
+	Home     Home
+	Posts    []Post
+	Projects []Project
+	Dark     bool
+	CSS      template.CSS
 }
 
-type Blog struct {
-	Posts []Post
+type Home struct {
+	Body    string
+	Content template.HTML
 }
 
 type Post struct {
@@ -27,30 +30,33 @@ type Post struct {
 
 type Comment struct {
 	Author    string
-	AvatarURL string
+	AvatarURL template.URL
 	CreatedAt time.Time
 	Content   template.HTML
 	Body      string
 }
 
-type GitHub struct {
-	User     User
-	Projects []Project
-}
-
 type User struct {
 	Name      string
-	AvatarURL string
+	AvatarURL template.URL
 }
 
 type Project struct {
 	Name        string
 	Description string
-	URL         string
+	URL         template.URL
+	Stars       int
+	Forks       int
 	Languages   []Language
+	Topics      []Topic
 }
 
 type Language struct {
 	Name  string
 	Color string
+}
+
+type Topic struct {
+	Name string
+	URL  string
 }
