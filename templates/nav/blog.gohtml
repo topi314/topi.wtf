@@ -1,30 +1,66 @@
 {{ range $index, $post := .Posts }}
 	<div class="post">
 		<div class="post__header">
-			<h2>{{ $post.Title }}</h2>
+			<a href="{{ $post.URL }}" target="_blank">{{ $post.Title }}</a>
 			<span class="time" title="{{ $post.CreatedAt }}">{{ humanizeTime $post.CreatedAt }}</span>
 		</div>
 		<pre><code class="ch-chroma">{{ $post.Content }}</code></pre>
 
-		<input id="comments-{{ $index }}" class="comments__show" type="checkbox">
-		<label for="comments-{{ $index }}">
-			<span>Show Comments</span>
-		</label>
+		<div class="post__details">
+			<div class="post__upvotes">
+				<span class="icon"></span>
+				<span>{{ $post.Upvotes }}</span>
+			</div>
 
-		<ul class="comments">
-            {{ range $comment := $post.Comments }}
-				<li class="comment">
-					<div class="comment__author">
-						<a href="https://github.com/{{ $comment.Author }}" target="_blank">
-							<img src="{{ $comment.AvatarURL }}" alt="{{ $comment.Author }}"/>
-							<span>{{ $comment.Author }}</span>
-						</a>
+			<input id="post-{{ $index }}" class="post__comments" type="checkbox">
+			<label for="post-{{ $index }}">
+				<span class="icon"></span>
+				<span>{{ len $post.Comments }}</span>
+			</label>
 
-						<span class="time" title="{{ $comment.CreatedAt }}">{{ humanizeTime $comment.CreatedAt }}</span>
-					</div>
-					<pre><code class="ch-chroma">{{ $comment.Content }}</code></pre>
-				</li>
-            {{ end }}
-		</ul>
+			<ul class="comments">
+				{{ range $index, $comment := $post.Comments }}
+					<li class="comment">
+						<div class="comment__author">
+							<a href="https://github.com/{{ $comment.Author }}" target="_blank">
+								<img src="{{ $comment.AvatarURL }}" alt="{{ $comment.Author }}"/>
+								<span>{{ $comment.Author }}</span>
+							</a>
+							<span class="time" title="{{ $comment.CreatedAt }}">{{ humanizeTime $comment.CreatedAt }}</span>
+						</div>
+						<pre><code class="ch-chroma">{{ $comment.Content }}</code></pre>
+
+						<div class="comment__details">
+							<div class="detail__upvotes">
+								<span class="icon"></span>
+								<span>{{ $comment.Upvotes }}</span>
+							</div>
+							<input id="comment-{{ $index }}" class="comment__replies" type="checkbox">
+							<label for="comment-{{ $index }}">
+								<span class="icon"></span>
+								<span>{{ len $comment.Replies }}</span>
+							</label>
+
+							{{ if $comment.Replies }}
+								<ul class="replies">
+									{{ range $reply := $comment.Replies }}
+										<li class="reply">
+											<div class="reply__author">
+												<a href="https://github.com/{{ $reply.Author }}" target="_blank">
+													<img src="{{ $reply.AvatarURL }}" alt="{{ $reply.Author }}"/>
+													<span>{{ $reply.Author }}</span>
+												</a>
+												<span class="time" title="{{ $reply.CreatedAt }}">{{ humanizeTime $reply.CreatedAt }}</span>
+											</div>
+											<pre><code class="ch-chroma">{{ $reply.Content }}</code></pre>
+										</li>
+									{{ end }}
+								</ul>
+							{{ end }}
+						</div>
+					</li>
+				{{ end }}
+			</ul>
+		</div>
 	</div>
 {{ end }}

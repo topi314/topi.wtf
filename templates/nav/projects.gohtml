@@ -8,7 +8,7 @@
             {{ $project.Description }}
         </p>
         <div class="project__details">
-            {{ if $project.Language.Name }}
+            {{ if $project.Language }}
                 <div class="project__language">
                     <span class="icon" style="background-color:{{ $project.Language.Color }}"></span>
                     <span>{{ $project.Language.Name }}</span>
@@ -23,7 +23,7 @@
                 <span>{{ $project.Forks }}</span>
             </div>
             <div class="project__updated">
-                <span class="time">Updated {{ humanizeTime $project.UpdatedAt }}</span>
+                <span class="time" title="{{ $project.UpdatedAt }}">Updated {{ humanizeTime $project.UpdatedAt }}</span>
             </div>
         </div>
         {{ if $project.Topics }}

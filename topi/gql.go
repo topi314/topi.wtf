@@ -52,7 +52,7 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 					Description      string
 					StargazerCount   int
 					ForkCount        int
-					UpdatedAt        time.Time
+					PushedAt         time.Time
 					RepositoryTopics struct {
 						Nodes []struct {
 							Topic struct {
@@ -68,25 +68,39 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 						}
 					} `graphql:"languages(first: 1, orderBy: {field: SIZE, direction: DESC})"`
 				}
-			} `graphql:"repositories(first: $repositories, orderBy: {field: UPDATED_AT, direction: DESC})"`
+			} `graphql:"repositories(first: $repositories, orderBy: {field: PUSHED_AT, direction: DESC})"`
 		} `graphql:"user(login: $user)"`
 		Repository struct {
 			Discussions struct {
 				Nodes []struct {
-					URL       string
-					Title     string
-					CreatedAt time.Time
-					Body      string
-					Comments  struct {
+					URL         string
+					Title       string
+					CreatedAt   time.Time
+					Body        string
+					UpvoteCount int
+					Comments    struct {
 						TotalCount int
 						Nodes      []struct {
 							Author struct {
 								Login     string
 								AvatarURL string
 							}
-							URL       string
-							CreatedAt time.Time
-							Body      string
+							URL         string
+							CreatedAt   time.Time
+							UpvoteCount int
+							Body        string
+							Replies     struct {
+								TotalCount int
+								Nodes      []struct {
+									Author struct {
+										Login     string
+										AvatarURL string
+									}
+									URL       string
+									CreatedAt time.Time
+									Body      string
+								}
+							} `graphql:"replies(first: $replies)"`
 						}
 					} `graphql:"comments(first: $comments)"`
 				}
@@ -101,6 +115,7 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		"topics":       githubv4.Int(10),
 		"discussions":  githubv4.Int(10),
 		"comments":     githubv4.Int(10),
+		"replies":      githubv4.Int(10),
 		"expression":   githubv4.String("HEAD:README.md"),
 	}
 	if err := s.client.Query(ctx, &query, variables); err != nil {
@@ -121,11 +136,22 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		comments := make([]Comment, 0, len(node.Comments.Nodes))
 
 		for _, cNode := range node.Comments.Nodes {
+			replies := make([]Reply, 0, len(cNode.Replies.Nodes))
+			for _, rNode := range cNode.Replies.Nodes {
+				replies = append(replies, Reply{
+					Author:    rNode.Author.Login,
+					AvatarURL: template.URL(rNode.Author.AvatarURL),
+					CreatedAt: rNode.CreatedAt,
+					Body:      rNode.Body,
+				})
+			}
 			comments = append(comments, Comment{
 				Author:    cNode.Author.Login,
 				AvatarURL: template.URL(cNode.Author.AvatarURL),
 				CreatedAt: cNode.CreatedAt,
+				Upvotes:   cNode.UpvoteCount,
 				Body:      cNode.Body,
+				Replies:   replies,
 			})
 		}
 
@@ -134,6 +160,7 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 			CreatedAt: node.CreatedAt,
 			URL:       template.URL(node.URL),
 			Body:      node.Body,
+			Upvotes:   node.UpvoteCount,
 			Comments:  comments,
 		})
 	}
@@ -163,7 +190,7 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 			URL:         template.URL(node.URL),
 			Stars:       node.StargazerCount,
 			Forks:       node.ForkCount,
-			UpdatedAt:   node.UpdatedAt,
+			UpdatedAt:   node.PushedAt,
 			Language:    language,
 			Topics:      topics,
 		})
@@ -193,6 +220,18 @@ func (s *Server) HighlightData(vars *Variables, style *chroma.Style) error {
 
 	for i, post := range vars.Posts {
 		for ii, comment := range post.Comments {
+			for iii, reply := range comment.Replies {
+				iterator, err = lexers.Markdown.Tokenise(nil, reply.Body)
+				if err != nil {
+					return fmt.Errorf("failed to tokenize reply: %w", err)
+				}
+				if err = s.htmlFormatter.Format(buff, style, iterator); err != nil {
+					return fmt.Errorf("failed to format reply: %w", err)
+				}
+				vars.Posts[i].Comments[ii].Replies[iii].Content = template.HTML(buff.String())
+				buff.Reset()
+			}
+
 			iterator, err = lexers.Markdown.Tokenise(nil, comment.Body)
 			if err != nil {
 				return fmt.Errorf("failed to tokenize comment: %w", err)

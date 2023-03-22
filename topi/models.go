@@ -25,10 +25,21 @@ type Post struct {
 	URL       template.URL
 	Content   template.HTML
 	Body      string
+	Upvotes   int
 	Comments  []Comment
 }
 
 type Comment struct {
+	Author    string
+	AvatarURL template.URL
+	CreatedAt time.Time
+	Upvotes   int
+	Content   template.HTML
+	Body      string
+	Replies   []Reply
+}
+
+type Reply struct {
 	Author    string
 	AvatarURL template.URL
 	CreatedAt time.Time
