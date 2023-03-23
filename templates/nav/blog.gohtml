@@ -12,7 +12,7 @@
 				<span>{{ $post.Upvotes }}</span>
 			</div>
 
-			<input id="post-{{ $index }}" class="post__comments" type="checkbox">
+			<input id="post-{{ $index }}" class="post__comments" type="checkbox" autocomplete="off">
 			<label for="post-{{ $index }}">
 				<span class="icon"></span>
 				<span>{{ len $post.Comments }}</span>
@@ -35,7 +35,7 @@
 								<span class="icon"></span>
 								<span>{{ $comment.Upvotes }}</span>
 							</div>
-							<input id="comment-{{ $index }}" class="comment__replies" type="checkbox">
+							<input id="comment-{{ $index }}" class="comment__replies" type="checkbox" autocomplete="off">
 							<label for="comment-{{ $index }}">
 								<span class="icon"></span>
 								<span>{{ len $comment.Replies }}</span>
