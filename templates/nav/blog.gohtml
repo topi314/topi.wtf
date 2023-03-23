@@ -4,7 +4,7 @@
 			<a href="{{ $post.URL }}" target="_blank">{{ $post.Title }}</a>
 			<span class="time" title="{{ $post.CreatedAt }}">{{ humanizeTime $post.CreatedAt }}</span>
 		</div>
-		<pre><code class="ch-chroma">{{ $post.Content }}</code></pre>
+		<div>{{ $post.Content }}</div>
 
 		<div class="post__details">
 			<div class="post__upvotes">
@@ -28,7 +28,7 @@
 							</a>
 							<span class="time" title="{{ $comment.CreatedAt }}">{{ humanizeTime $comment.CreatedAt }}</span>
 						</div>
-						<pre><code class="ch-chroma">{{ $comment.Content }}</code></pre>
+						<div>{{ $comment.Content }}</div>
 
 						<div class="comment__details">
 							<div class="detail__upvotes">
@@ -52,7 +52,7 @@
 												</a>
 												<span class="time" title="{{ $reply.CreatedAt }}">{{ humanizeTime $reply.CreatedAt }}</span>
 											</div>
-											<pre><code class="ch-chroma">{{ $reply.Content }}</code></pre>
+											<div>{{ $reply.Content }}</div>
 										</li>
 									{{ end }}
 								</ul>

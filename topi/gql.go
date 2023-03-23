@@ -7,8 +7,6 @@ import (
 	"html/template"
 	"time"
 
-	"github.com/alecthomas/chroma/v2"
-	"github.com/alecthomas/chroma/v2/lexers"
 	"github.com/shurcooL/githubv4"
 )
 
@@ -205,14 +203,9 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 	}, nil
 }
 
-func (s *Server) HighlightData(vars *Variables, style *chroma.Style) error {
+func (s *Server) HighlightData(vars *Variables) error {
 	buff := new(bytes.Buffer)
-
-	iterator, err := lexers.Markdown.Tokenise(nil, vars.Home.Body)
-	if err != nil {
-		return fmt.Errorf("failed to tokenize home: %w", err)
-	}
-	if err = s.htmlFormatter.Format(buff, style, iterator); err != nil {
+	if err := s.md.Convert([]byte(vars.Home.Body), buff); err != nil {
 		return fmt.Errorf("failed to format home: %w", err)
 	}
 	vars.Home.Content = template.HTML(buff.String())
@@ -221,42 +214,27 @@ func (s *Server) HighlightData(vars *Variables, style *chroma.Style) error {
 	for i, post := range vars.Posts {
 		for ii, comment := range post.Comments {
 			for iii, reply := range comment.Replies {
-				iterator, err = lexers.Markdown.Tokenise(nil, reply.Body)
-				if err != nil {
-					return fmt.Errorf("failed to tokenize reply: %w", err)
-				}
-				if err = s.htmlFormatter.Format(buff, style, iterator); err != nil {
+				if err := s.md.Convert([]byte(reply.Body), buff); err != nil {
 					return fmt.Errorf("failed to format reply: %w", err)
 				}
 				vars.Posts[i].Comments[ii].Replies[iii].Content = template.HTML(buff.String())
 				buff.Reset()
 			}
 
-			iterator, err = lexers.Markdown.Tokenise(nil, comment.Body)
-			if err != nil {
-				return fmt.Errorf("failed to tokenize comment: %w", err)
-			}
-			if err = s.htmlFormatter.Format(buff, style, iterator); err != nil {
+			if err := s.md.Convert([]byte(comment.Body), buff); err != nil {
 				return fmt.Errorf("failed to format comment: %w", err)
 			}
 			post.Comments[ii].Content = template.HTML(buff.String())
 			buff.Reset()
 		}
 
-		iterator, err = lexers.Markdown.Tokenise(nil, post.Body)
-		if err != nil {
-			return fmt.Errorf("failed to tokenize post: %w", err)
-		}
-		if err = s.htmlFormatter.Format(buff, style, iterator); err != nil {
+		if err := s.md.Convert([]byte(post.Body), buff); err != nil {
 			return fmt.Errorf("failed to format post: %w", err)
 		}
 		vars.Posts[i].Content = template.HTML(buff.String())
 		buff.Reset()
 	}
 
-	if err = s.htmlFormatter.WriteCSS(buff, style); err != nil {
-		return fmt.Errorf("failed to write css: %w", err)
-	}
 	vars.CSS = template.CSS(buff.String())
 
 	return nil

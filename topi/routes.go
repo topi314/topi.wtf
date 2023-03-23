@@ -1,6 +1,7 @@
 package topi
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -9,6 +10,7 @@ import (
 	"net/http"
 	"strings"
 
+	chtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -39,6 +41,8 @@ func (s *Server) Routes() http.Handler {
 	r.Use(middleware.Heartbeat("/ping"))
 
 	r.Mount("/assets", http.FileServer(s.assets))
+	r.HandleFunc("/dark.css", s.theme(true))
+	r.HandleFunc("/light.css", s.theme(false))
 	r.Handle("/favicon.ico", s.file("/assets/favicon.png"))
 	r.Handle("/favicon.png", s.file("/assets/favicon.png"))
 	r.Handle("/favicon-light.png", s.file("/assets/favicon-light.png"))
@@ -71,22 +75,35 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	style := StyleDark
-	themeCookie, _ := r.Cookie("theme")
-	if themeCookie != nil {
+	if themeCookie, _ := r.Cookie("theme"); themeCookie != nil {
 		vars.Dark = themeCookie.Value == "dark"
-		if !vars.Dark {
-			style = StyleLight
-		}
 	}
 
-	if err = s.HighlightData(vars, style); err != nil {
+	if err = s.HighlightData(vars); err != nil {
 		s.prettyError(w, r, fmt.Errorf("failed to highlight data: %w", err), http.StatusInternalServerError)
 		return
 	}
 
 	if err = s.tmpl(w, "index.gohtml", vars); err != nil {
 		log.Println("failed to execute template:", err)
+	}
+}
+
+func (s *Server) theme(dark bool) http.HandlerFunc {
+	style := StyleDark
+	if !dark {
+		style = StyleLight
+	}
+	cssBuff := new(bytes.Buffer)
+	if err := chtml.New(chtml.WithClasses(true), chtml.ClassPrefix("ch-")).WriteCSS(cssBuff, style); err != nil {
+		return func(w http.ResponseWriter, r *http.Request) {
+			s.prettyError(w, r, fmt.Errorf("failed to write CSS: %w", err), http.StatusInternalServerError)
+		}
+	}
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/css")
+		_, _ = w.Write(cssBuff.Bytes())
 	}
 }
 

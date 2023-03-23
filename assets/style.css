@@ -4,15 +4,12 @@
 }
 
 .dark {
-    --bg-primary: #131b26;
-    --bg-secondary: #0d1117;
-    --nav-button-bg: #172231;
-    --nav-button-bg-hover: #212c3b;
+    --bg-primary: #1f2834;
+    --bg-primary-hover: #2d3949;
+    --bg-secondary: #131b26;
+    --nav-button-bg: #222e41;
     --text-primary: #d3d8dd;
     --text-secondary: #828997;
-    --bg-scrollbar: #373b41;
-    --bg-scrollbar-thumb: #1f2228;
-    --bg-scrollbar-thumb-hover: #232529;
 
     --arrow-down: url("/assets/icons/dark/arrow-down.png");
     --copy: url("/assets/icons/dark/copy.png");
@@ -32,14 +29,12 @@
 
 .light {
     --bg-primary: #fafafa;
+    --bg-primary-hover: #dbdbdb;
     --bg-secondary: #ebecef;
     --nav-button-bg: #d1d5da;
-    --nav-button-bg-hover: #dbdbdb;
+
     --text-primary: #282c34;
     --text-secondary: #525965;
-    --bg-scrollbar: #ebecef;
-    --bg-scrollbar-thumb: #d4d5dc;
-    --bg-scrollbar-thumb-hover: #c3c8ce;
 
     --arrow-down: url("/assets/icons/light/arrow-down.png");
     --copy: url("/assets/icons/light/copy.png");
@@ -183,7 +178,7 @@ main > input[type="radio"] + label {
 }
 
 main > input[type="radio"]:hover + label {
-    background-color: var(--nav-button-bg-hover);
+    background-color: var(--bg-primary-hover);
 }
 
 main > input[type="radio"]:checked + label::after {
@@ -218,16 +213,9 @@ main > input[type="radio"]:checked + label::after {
     display: flex;
 }
 
-pre {
-    margin: 0;
-    padding: 0;
-}
-
-pre code {
-    display: block;
+.ch-chroma {
     padding: 1rem;
-    overflow-x: auto;
-    border-radius: 1rem;
+    border-radius: 0.5rem;
 }
 
 footer {

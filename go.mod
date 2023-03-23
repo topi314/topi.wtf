@@ -2,8 +2,6 @@ module github.com/topisenpai/topi.wtf
 
 go 1.20
 
-replace github.com/alecthomas/chroma/v2 => github.com/topisenpai/chroma/v2 v2.0.0-20230320013543-58daa432fd2a
-
 require (
 	github.com/alecthomas/chroma/v2 v2.7.0
 	github.com/dustin/go-humanize v1.0.1
@@ -12,12 +10,16 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/shurcooL/githubv4 v0.0.0-20230305132112-efb623903184
 	github.com/spf13/viper v1.15.0
+	github.com/yuin/goldmark v1.5.4
+	github.com/yuin/goldmark-emoji v1.0.1
+	github.com/yuin/goldmark-highlighting/v2 v2.0.0-20220924101305-151362477c87
+	go.abhg.dev/goldmark/anchor v0.1.1
 	golang.org/x/oauth2 v0.6.0
 )
 
 require (
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/dlclark/regexp2 v1.4.0 // indirect
+	github.com/dlclark/regexp2 v1.7.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/hashicorp/golang-lru v0.5.5-0.20200511160909-eb529947af53 // indirect

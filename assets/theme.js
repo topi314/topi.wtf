@@ -28,6 +28,7 @@ function setTheme(theme) {
     setCookie("theme", theme);
     document.documentElement.setAttribute("data-theme", theme);
     document.documentElement.classList.replace(theme === "dark" ? "light" : "dark", theme);
+    document.querySelector(`link[title='theme']`).href = `/${theme}.css`;
 }
 
 function getCookie(name) {

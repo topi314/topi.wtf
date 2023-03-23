@@ -13,11 +13,18 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/alecthomas/chroma/v2/formatters/html"
+	chtml "github.com/alecthomas/chroma/v2/formatters/html"
+	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/dustin/go-humanize"
 	"github.com/mitchellh/mapstructure"
 	"github.com/shurcooL/githubv4"
 	"github.com/spf13/viper"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark-emoji"
+	"github.com/yuin/goldmark-highlighting/v2"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/renderer/html"
+	"go.abhg.dev/goldmark/anchor"
 	"golang.org/x/oauth2"
 
 	"github.com/topisenpai/topi.wtf/topi"
@@ -100,17 +107,26 @@ func main() {
 	))
 	client := githubv4.NewClient(httpClient)
 
-	htmlFormatter := html.New(
-		html.WithClasses(true),
-		html.WithAllClasses(true),
-		html.ClassPrefix("ch-"),
-		html.Standalone(false),
-		html.InlineCode(false),
-		html.WithNopPreWrapper(),
-		html.TabWidth(4),
+	md := goldmark.New(
+		goldmark.WithRendererOptions(
+			html.WithUnsafe(),
+		),
+		goldmark.WithExtensions(
+			extension.GFM,
+			emoji.Emoji,
+			&anchor.Extender{},
+			highlighting.NewHighlighting(
+				highlighting.WithCustomStyle(styles.Get("swapoff")),
+				highlighting.WithFormatOptions(
+					chtml.TabWidth(4),
+					chtml.WithClasses(true),
+					chtml.ClassPrefix("ch-"),
+				),
+			),
+		),
 	)
 
-	s := topi.NewServer(topi.FormatBuildVersion(version, commit, buildTime), cfg, client, htmlFormatter, assets, tmplFunc)
+	s := topi.NewServer(topi.FormatBuildVersion(version, commit, buildTime), cfg, client, md, assets, tmplFunc)
 
 	if err := s.FetchCategoryID(context.TODO()); err != nil {
 		log.Fatalln("Error while fetching category ID:", err)
