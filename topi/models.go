@@ -6,12 +6,14 @@ import (
 )
 
 type Variables struct {
-	User     User
-	Home     Home
-	Posts    []Post
-	Projects []Project
-	Dark     bool
-	CSS      template.CSS
+	User          User
+	Home          Home
+	Posts         []Post
+	PostsAfter    string
+	Projects      []Project
+	ProjectsAfter string
+	Dark          bool
+	CSS           template.CSS
 }
 
 type Home struct {

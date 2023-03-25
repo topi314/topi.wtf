@@ -2,33 +2,33 @@
 <body>
 {{ template "header.gohtml" . }}
 <main>
-    <input type="radio" name="nav" id="nav-home" checked/>
-    <label for="nav-home" title="Home">Home</label>
+	<input type="radio" name="nav" id="nav-home" checked/>
+	<label for="nav-home" title="Home">Home</label>
 
-    <input type="radio" name="nav" id="nav-blog"/>
-    <label for="nav-blog" title="Blog">Blog</label>
+	<input type="radio" name="nav" id="nav-blog"/>
+	<label for="nav-blog" title="Blog">Blog</label>
 
-    <input type="radio" name="nav" id="nav-projects"/>
-    <label for="nav-projects" title="Projects">Projects</label>
+	<input type="radio" name="nav" id="nav-projects"/>
+	<label for="nav-projects" title="Projects">Projects</label>
 
-    <input type="radio" name="nav" id="nav-about"/>
-    <label for="nav-about" title="About">About</label>
+	<input type="radio" name="nav" id="nav-about"/>
+	<label for="nav-about" title="About">About</label>
 
-    <div class="nav home">
-        <div>{{ template "home.gohtml" .}}</div>
-    </div>
-    <div class="nav blog">
-        <div>{{ template "blog.gohtml" .}}</div>
-    </div>
-    <div class="nav projects">
-        <div>{{ template "projects.gohtml" .}}</div>
-    </div>
-    <div class="nav about">
-        <div>{{ template "about.gohtml" .}}</div>
-    </div>
+	<div class="nav home">
+		<div>{{ template "home.gohtml" .}}</div>
+	</div>
+	<div class="nav blog">
+		<div id="posts">{{ template "blog.gohtml" .}}</div>
+	</div>
+	<div class="nav projects">
+		<div id="projects">{{ template "projects.gohtml" .}}</div>
+	</div>
+	<div class="nav about">
+		<div>{{ template "about.gohtml" .}}</div>
+	</div>
 </main>
 <footer>
-    <p>© 2023 - <a href="https://github.com/TopiSenpai" target="_blank">@TopiSenpai</a></p>
+	<p>© 2023 - <a href="https://github.com/TopiSenpai" target="_blank">@TopiSenpai</a></p>
 </footer>
 <script src="/assets/theme.js" defer></script>
 <script src="/assets/script.js" defer></script>

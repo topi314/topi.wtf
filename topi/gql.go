@@ -10,6 +10,74 @@ import (
 	"github.com/shurcooL/githubv4"
 )
 
+type Repositories struct {
+	Nodes []struct {
+		Name             string
+		URL              string
+		Description      string
+		StargazerCount   int
+		ForkCount        int
+		PushedAt         time.Time
+		RepositoryTopics struct {
+			Nodes []struct {
+				Topic struct {
+					Name string
+				}
+				URL string
+			}
+		} `graphql:"repositoryTopics(first: $topics)"`
+		Languages struct {
+			Nodes []struct {
+				Name  string
+				Color string
+			}
+		} `graphql:"languages(first: 1, orderBy: {field: SIZE, direction: DESC})"`
+	}
+	PageInfo struct {
+		EndCursor   string
+		HasNextPage bool
+	}
+}
+
+type Discussions struct {
+	Nodes []struct {
+		URL         string
+		Title       string
+		CreatedAt   time.Time
+		Body        string
+		UpvoteCount int
+		Comments    struct {
+			TotalCount int
+			Nodes      []struct {
+				Author struct {
+					Login     string
+					AvatarURL string
+				}
+				URL         string
+				CreatedAt   time.Time
+				UpvoteCount int
+				Body        string
+				Replies     struct {
+					TotalCount int
+					Nodes      []struct {
+						Author struct {
+							Login     string
+							AvatarURL string
+						}
+						URL       string
+						CreatedAt time.Time
+						Body      string
+					}
+				} `graphql:"replies(first: $replies)"`
+			}
+		} `graphql:"comments(first: $comments)"`
+	}
+	PageInfo struct {
+		EndCursor   string
+		HasNextPage bool
+	}
+}
+
 func (s *Server) FetchCategoryID(ctx context.Context) error {
 	var query struct {
 		Repository struct {
@@ -31,106 +99,44 @@ func (s *Server) FetchCategoryID(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
-	var query struct {
-		User struct {
-			Login      string
-			AvatarURL  string
-			Repository struct {
-				Object struct {
-					Blob struct {
-						Text string
-					} `graphql:"... on Blob"`
-				} `graphql:"object(expression: $expression)"`
-			} `graphql:"repository(name: $user)"`
-			Repositories struct {
-				Nodes []struct {
-					Name             string
-					URL              string
-					Description      string
-					StargazerCount   int
-					ForkCount        int
-					PushedAt         time.Time
-					RepositoryTopics struct {
-						Nodes []struct {
-							Topic struct {
-								Name string
-							}
-							URL string
-						}
-					} `graphql:"repositoryTopics(first: $topics)"`
-					Languages struct {
-						Nodes []struct {
-							Name  string
-							Color string
-						}
-					} `graphql:"languages(first: 1, orderBy: {field: SIZE, direction: DESC})"`
-				}
-			} `graphql:"repositories(first: $repositories, orderBy: {field: PUSHED_AT, direction: DESC})"`
-		} `graphql:"user(login: $user)"`
-		Repository struct {
-			Discussions struct {
-				Nodes []struct {
-					URL         string
-					Title       string
-					CreatedAt   time.Time
-					Body        string
-					UpvoteCount int
-					Comments    struct {
-						TotalCount int
-						Nodes      []struct {
-							Author struct {
-								Login     string
-								AvatarURL string
-							}
-							URL         string
-							CreatedAt   time.Time
-							UpvoteCount int
-							Body        string
-							Replies     struct {
-								TotalCount int
-								Nodes      []struct {
-									Author struct {
-										Login     string
-										AvatarURL string
-									}
-									URL       string
-									CreatedAt time.Time
-									Body      string
-								}
-							} `graphql:"replies(first: $replies)"`
-						}
-					} `graphql:"comments(first: $comments)"`
-				}
-			} `graphql:"discussions(first: $discussions, categoryId: $category)"`
-		} `graphql:"repository(owner: $user, name: $name)"`
-	}
-	variables := map[string]interface{}{
-		"user":         githubv4.String(s.cfg.Blog.User),
-		"name":         githubv4.String(s.cfg.Blog.Repository),
-		"category":     s.categoryID,
-		"repositories": githubv4.Int(10),
-		"topics":       githubv4.Int(10),
-		"discussions":  githubv4.Int(10),
-		"comments":     githubv4.Int(10),
-		"replies":      githubv4.Int(10),
-		"expression":   githubv4.String("HEAD:README.md"),
-	}
-	if err := s.client.Query(ctx, &query, variables); err != nil {
-		return nil, err
+func parseRepositories(repositories Repositories) []Project {
+	projects := make([]Project, 0, len(repositories.Nodes))
+	for _, node := range repositories.Nodes {
+		var language *Language
+		if len(node.Languages.Nodes) > 0 {
+			lNode := node.Languages.Nodes[0]
+			language = &Language{
+				Name:  lNode.Name,
+				Color: lNode.Color,
+			}
+		}
+
+		topics := make([]Topic, 0, len(node.RepositoryTopics.Nodes))
+		for _, tNode := range node.RepositoryTopics.Nodes {
+			topics = append(topics, Topic{
+				Name: tNode.Topic.Name,
+				URL:  tNode.URL,
+			})
+		}
+
+		projects = append(projects, Project{
+			Name:        node.Name,
+			Description: node.Description,
+			URL:         template.URL(node.URL),
+			Stars:       node.StargazerCount,
+			Forks:       node.ForkCount,
+			UpdatedAt:   node.PushedAt,
+			Language:    language,
+			Topics:      topics,
+		})
 	}
 
-	user := User{
-		Name:      query.User.Login,
-		AvatarURL: template.URL(query.User.AvatarURL),
-	}
+	return projects
+}
 
-	home := Home{
-		Body: query.User.Repository.Object.Blob.Text,
-	}
-
-	posts := make([]Post, 0, len(query.Repository.Discussions.Nodes))
-	for _, node := range query.Repository.Discussions.Nodes {
+func parseDiscussions(discussions Discussions) []Post {
+	posts := make([]Post, 0, len(discussions.Nodes))
+	for _, node := range discussions.Nodes {
 		comments := make([]Comment, 0, len(node.Comments.Nodes))
 
 		for _, cNode := range node.Comments.Nodes {
@@ -162,44 +168,125 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 			Comments:  comments,
 		})
 	}
+	return posts
+}
 
-	projects := make([]Project, 0, len(query.User.Repositories.Nodes))
-	for _, node := range query.User.Repositories.Nodes {
-		var language *Language
-		if len(node.Languages.Nodes) > 0 {
-			lNode := node.Languages.Nodes[0]
-			language = &Language{
-				Name:  lNode.Name,
-				Color: lNode.Color,
-			}
-		}
+func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
+	var query struct {
+		User struct {
+			Login      string
+			AvatarURL  string
+			Repository struct {
+				Object struct {
+					Blob struct {
+						Text string
+					} `graphql:"... on Blob"`
+				} `graphql:"object(expression: $expression)"`
+			} `graphql:"repository(name: $user)"`
+			Repositories Repositories `graphql:"repositories(first: $repositories, isFork: false, privacy: PUBLIC, orderBy: {field: PUSHED_AT, direction: DESC})"`
+		} `graphql:"user(login: $user)"`
+		Repository struct {
+			Discussions Discussions `graphql:"discussions(first: $discussions, categoryId: $category)"`
+		} `graphql:"repository(owner: $user, name: $name)"`
+	}
+	variables := map[string]interface{}{
+		"user":         githubv4.String(s.cfg.Blog.User),
+		"name":         githubv4.String(s.cfg.Blog.Repository),
+		"category":     s.categoryID,
+		"repositories": githubv4.Int(10),
+		"topics":       githubv4.Int(10),
+		"discussions":  githubv4.Int(10),
+		"comments":     githubv4.Int(10),
+		"replies":      githubv4.Int(10),
+		"expression":   githubv4.String("HEAD:README.md"),
+	}
+	if err := s.client.Query(ctx, &query, variables); err != nil {
+		return nil, err
+	}
 
-		topics := make([]Topic, 0, len(node.RepositoryTopics.Nodes))
-		for _, tNode := range node.RepositoryTopics.Nodes {
-			topics = append(topics, Topic{
-				Name: tNode.Topic.Name,
-				URL:  tNode.URL,
-			})
-		}
+	user := User{
+		Name:      query.User.Login,
+		AvatarURL: template.URL(query.User.AvatarURL),
+	}
 
-		projects = append(projects, Project{
-			Name:        node.Name,
-			Description: node.Description,
-			URL:         template.URL(node.URL),
-			Stars:       node.StargazerCount,
-			Forks:       node.ForkCount,
-			UpdatedAt:   node.PushedAt,
-			Language:    language,
-			Topics:      topics,
-		})
+	home := Home{
+		Body: query.User.Repository.Object.Blob.Text,
+	}
+
+	postsAfter := query.Repository.Discussions.PageInfo.EndCursor
+	if !query.Repository.Discussions.PageInfo.HasNextPage {
+		postsAfter = ""
+	}
+	projectsAfter := query.User.Repositories.PageInfo.EndCursor
+	if !query.User.Repositories.PageInfo.HasNextPage {
+		projectsAfter = ""
 	}
 
 	return &Variables{
-		User:     user,
-		Home:     home,
-		Posts:    posts,
-		Projects: projects,
-		Dark:     true,
+		User:          user,
+		Home:          home,
+		Posts:         parseDiscussions(query.Repository.Discussions),
+		PostsAfter:    postsAfter,
+		Projects:      parseRepositories(query.User.Repositories),
+		ProjectsAfter: projectsAfter,
+		Dark:          true,
+	}, nil
+}
+
+func (s *Server) FetchRepositories(ctx context.Context, after string) (*Variables, error) {
+	var query struct {
+		User struct {
+			Repositories Repositories `graphql:"repositories(after: $after, first: $repositories, isFork: false, privacy: PUBLIC, orderBy: {field: PUSHED_AT, direction: DESC})"`
+		} `graphql:"user(login: $user)"`
+	}
+	variables := map[string]interface{}{
+		"user":         githubv4.String(s.cfg.Blog.User),
+		"repositories": githubv4.Int(10),
+		"topics":       githubv4.Int(10),
+		"after":        githubv4.String(after),
+	}
+	if err := s.client.Query(ctx, &query, variables); err != nil {
+		return nil, err
+	}
+
+	after = query.User.Repositories.PageInfo.EndCursor
+	if !query.User.Repositories.PageInfo.HasNextPage {
+		after = ""
+	}
+
+	return &Variables{
+		Projects:      parseRepositories(query.User.Repositories),
+		ProjectsAfter: after,
+	}, nil
+}
+
+func (s *Server) FetchPosts(ctx context.Context, after string) (*Variables, error) {
+	var query struct {
+		Repository struct {
+			Discussions Discussions `graphql:"discussions(after: $after, first: $discussions, categoryId: $category)"`
+		} `graphql:"repository(owner: $user, name: $name)"`
+	}
+	variables := map[string]interface{}{
+		"user":        githubv4.String(s.cfg.Blog.User),
+		"name":        githubv4.String(s.cfg.Blog.Repository),
+		"category":    s.categoryID,
+		"discussions": githubv4.Int(10),
+		"comments":    githubv4.Int(10),
+		"replies":     githubv4.Int(10),
+		"after":       githubv4.String(after),
+	}
+	if err := s.client.Query(ctx, &query, variables); err != nil {
+		return nil, err
+	}
+
+	after = query.Repository.Discussions.PageInfo.EndCursor
+	if !query.Repository.Discussions.PageInfo.HasNextPage {
+		after = ""
+	}
+
+	return &Variables{
+		Posts:      parseDiscussions(query.Repository.Discussions),
+		PostsAfter: after,
 	}, nil
 }
 

@@ -227,3 +227,26 @@ footer a {
     text-decoration: none;
 }
 
+.load-more {
+    border: none;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    background-color: var(--bg-primary-hover);
+    cursor: pointer;
+    transition: filter 0.2s ease-in-out;
+    color: var(--text-primary);
+}
+
+.load-more:hover {
+    filter: opacity(0.7);
+}
+
+.load-more.loading {
+    cursor: progress;
+    color: transparent;
+
+    background-image: url("/assets/icons/loading.gif");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 2rem;
+}

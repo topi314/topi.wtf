@@ -52,6 +52,16 @@ func (s *Server) Routes() http.Handler {
 		if s.cfg.Cache != nil && s.cfg.Cache.Size > 0 {
 			r.Use(stampede.HandlerWithKey(s.cfg.Cache.Size, s.cfg.Cache.TTL, cacheKeyFunc))
 		}
+		r.Route("/api", func(r chi.Router) {
+			r.Route("/posts", func(r chi.Router) {
+				r.Get("/", s.posts)
+				r.Head("/", s.posts)
+			})
+			r.Route("/repositories", func(r chi.Router) {
+				r.Get("/", s.repositories)
+				r.Head("/", s.repositories)
+			})
+		})
 		r.Get("/", s.index)
 		r.Head("/", s.index)
 	})
@@ -66,6 +76,38 @@ func cacheKeyFunc(r *http.Request) uint64 {
 		theme = cookie.Value
 	}
 	return stampede.BytesToHash([]byte(theme), []byte(strings.ToLower(r.URL.Path)))
+}
+
+func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
+	after := r.URL.Query().Get("after")
+	vars, err := s.FetchRepositories(r.Context(), after)
+	if err != nil {
+		s.log(r, "api request", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err = s.tmpl(w, "projects.gohtml", vars); err != nil {
+		s.log(r, "template", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+}
+
+func (s *Server) posts(w http.ResponseWriter, r *http.Request) {
+	after := r.URL.Query().Get("after")
+	vars, err := s.FetchPosts(r.Context(), after)
+	if err != nil {
+		s.log(r, "api request", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if err = s.tmpl(w, "blog.gohtml", vars); err != nil {
+		s.log(r, "template", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {

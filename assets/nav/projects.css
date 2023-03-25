@@ -82,5 +82,5 @@
 }
 
 .project__topic:hover {
-    background-color: var(--nav-button-bg-hover);
+    background-color: var(--bg-primary-hover);
 }
