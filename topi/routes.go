@@ -75,7 +75,7 @@ func cacheKeyFunc(r *http.Request) uint64 {
 	if cookie != nil {
 		theme = cookie.Value
 	}
-	return stampede.BytesToHash([]byte(theme), []byte(strings.ToLower(r.URL.Path)))
+	return stampede.BytesToHash([]byte(theme), []byte(strings.ToLower(r.URL.Path)), []byte(r.URL.RawQuery))
 }
 
 func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
