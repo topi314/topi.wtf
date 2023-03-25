@@ -1,0 +1,12 @@
+
+#home a {
+    color: var(--link-color);
+}
+
+#home a a:hover {
+    color: var(--link-color-hover);
+}
+
+#home a a:visited {
+    color: var(--link-color-visited);
+}

@@ -15,7 +15,7 @@
 	<label for="nav-about" title="About">About</label>
 
 	<div class="nav home">
-		<div>{{ template "home.gohtml" .}}</div>
+		<div id="home">{{ template "home.gohtml" .}}</div>
 	</div>
 	<div class="nav blog">
 		<div id="posts">{{ template "blog.gohtml" .}}</div>
@@ -24,7 +24,7 @@
 		<div id="projects">{{ template "projects.gohtml" .}}</div>
 	</div>
 	<div class="nav about">
-		<div>{{ template "about.gohtml" .}}</div>
+		<div id="about">{{ template "about.gohtml" .}}</div>
 	</div>
 </main>
 <footer>

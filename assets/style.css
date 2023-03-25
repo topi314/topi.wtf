@@ -8,8 +8,13 @@
     --bg-primary-hover: #2d3949;
     --bg-secondary: #131b26;
     --nav-button-bg: #222e41;
+
     --text-primary: #d3d8dd;
     --text-secondary: #828997;
+
+    --link-color: #4f92de;
+    --link-color-hover: #346daf;
+    --link-color-visited: #326fb4;
 
     --arrow-down: url("/assets/icons/dark/arrow-down.png");
     --copy: url("/assets/icons/dark/copy.png");
@@ -35,6 +40,10 @@
 
     --text-primary: #282c34;
     --text-secondary: #525965;
+
+    --link-color: #155aa8;
+    --link-color-hover: #1457a4;
+    --link-color-visited: #0e4077;
 
     --arrow-down: url("/assets/icons/light/arrow-down.png");
     --copy: url("/assets/icons/light/copy.png");
@@ -95,7 +104,7 @@ header a {
     margin: 0;
     padding: 0;
     text-decoration: none;
-    color: inherit;
+    color: var(--text-primary);
 }
 
 .icon {
@@ -195,15 +204,15 @@ main > input[type="radio"]:checked + label::after {
 }
 
 .nav > div {
+    margin: 0 auto;
+    width: 40rem;
+}
+
+.nav.blog > div,
+.nav.projects > div {
     display: flex;
     flex-direction: column;
     gap: 1rem;
-    margin: 0 auto;
-}
-
-.nav.projects > div,
-.nav.blog > div {
-    width: 40rem;
 }
 
 #nav-home:checked ~ .nav.home,
@@ -223,7 +232,7 @@ footer {
 }
 
 footer a {
-    color: inherit;
+    color: var(--text-primary);
     text-decoration: none;
 }
 
