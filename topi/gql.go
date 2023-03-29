@@ -196,8 +196,8 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		"repositories": githubv4.Int(10),
 		"topics":       githubv4.Int(10),
 		"discussions":  githubv4.Int(10),
-		"comments":     githubv4.Int(10),
-		"replies":      githubv4.Int(10),
+		"comments":     githubv4.Int(100),
+		"replies":      githubv4.Int(100),
 		"expression":   githubv4.String("HEAD:README.md"),
 	}
 	if err := s.client.Query(ctx, &query, variables); err != nil {
