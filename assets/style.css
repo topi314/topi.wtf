@@ -70,6 +70,7 @@
 html {
     background-color: var(--bg-primary);
     color: var(--text-primary);
+    font-size: calc(0.8em + 0.3vw);
 }
 
 body {
