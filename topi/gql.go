@@ -178,9 +178,16 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 			AvatarURL  string
 			Repository struct {
 				Object struct {
-					Blob struct {
-						Text string
-					} `graphql:"... on Blob"`
+					Tree struct {
+						Entries []struct {
+							Name   string
+							Object struct {
+								Blob struct {
+									Text string
+								} `graphql:"... on Blob"`
+							}
+						}
+					} `graphql:"... on Tree"`
 				} `graphql:"object(expression: $expression)"`
 			} `graphql:"repository(name: $user)"`
 			Repositories Repositories `graphql:"repositories(first: $repositories, isFork: false, privacy: PUBLIC, orderBy: {field: PUSHED_AT, direction: DESC})"`
@@ -198,7 +205,7 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		"discussions":  githubv4.Int(10),
 		"comments":     githubv4.Int(100),
 		"replies":      githubv4.Int(100),
-		"expression":   githubv4.String("HEAD:README.md"),
+		"expression":   githubv4.String("HEAD:"),
 	}
 	if err := s.client.Query(ctx, &query, variables); err != nil {
 		return nil, err
@@ -209,8 +216,16 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		AvatarURL: template.URL(query.User.AvatarURL),
 	}
 
-	home := Home{
-		Body: query.User.Repository.Object.Blob.Text,
+	var (
+		home  Home
+		about About
+	)
+	for _, entry := range query.User.Repository.Object.Tree.Entries {
+		if entry.Name == "README.md" {
+			home.Body = entry.Object.Blob.Text
+		} else if entry.Name == "ABOUT.md" {
+			about.Body = entry.Object.Blob.Text
+		}
 	}
 
 	postsAfter := query.Repository.Discussions.PageInfo.EndCursor
@@ -229,6 +244,7 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		PostsAfter:    postsAfter,
 		Projects:      parseRepositories(query.User.Repositories),
 		ProjectsAfter: projectsAfter,
+		About:         about,
 		Dark:          true,
 	}, nil
 }
@@ -296,6 +312,12 @@ func (s *Server) HighlightData(vars *Variables) error {
 		return fmt.Errorf("failed to format home: %w", err)
 	}
 	vars.Home.Content = template.HTML(buff.String())
+	buff.Reset()
+
+	if err := s.md.Convert([]byte(vars.About.Body), buff); err != nil {
+		return fmt.Errorf("failed to format about: %w", err)
+	}
+	vars.About.Content = template.HTML(buff.String())
 	buff.Reset()
 
 	for i, post := range vars.Posts {

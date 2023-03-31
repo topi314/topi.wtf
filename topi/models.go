@@ -12,11 +12,17 @@ type Variables struct {
 	PostsAfter    string
 	Projects      []Project
 	ProjectsAfter string
+	About         About
 	Dark          bool
 	CSS           template.CSS
 }
 
 type Home struct {
+	Body    string
+	Content template.HTML
+}
+
+type About struct {
 	Body    string
 	Content template.HTML
 }
