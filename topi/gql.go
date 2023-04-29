@@ -216,15 +216,10 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		AvatarURL: template.URL(query.User.AvatarURL),
 	}
 
-	var (
-		home  Home
-		about About
-	)
+	var home Home
 	for _, entry := range query.User.Repository.Object.Tree.Entries {
 		if entry.Name == "README.md" {
 			home.Body = entry.Object.Blob.Text
-		} else if entry.Name == "ABOUT.md" {
-			about.Body = entry.Object.Blob.Text
 		}
 	}
 
@@ -244,7 +239,6 @@ func (s *Server) FetchData(ctx context.Context) (*Variables, error) {
 		PostsAfter:    postsAfter,
 		Projects:      parseRepositories(query.User.Repositories),
 		ProjectsAfter: projectsAfter,
-		About:         about,
 		Dark:          true,
 	}, nil
 }
@@ -312,12 +306,6 @@ func (s *Server) HighlightData(vars *Variables) error {
 		return fmt.Errorf("failed to format home: %w", err)
 	}
 	vars.Home.Content = template.HTML(buff.String())
-	buff.Reset()
-
-	if err := s.md.Convert([]byte(vars.About.Body), buff); err != nil {
-		return fmt.Errorf("failed to format about: %w", err)
-	}
-	vars.About.Content = template.HTML(buff.String())
 	buff.Reset()
 
 	for i, post := range vars.Posts {

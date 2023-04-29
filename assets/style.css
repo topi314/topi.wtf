@@ -163,11 +163,11 @@ header a {
 
 main {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     grid-template-rows: auto 1fr;
     grid-template-areas:
-    "home blog projects about"
-    "content content content content";
+    "home blog projects"
+    "content content content";
     flex-grow: 1;
     padding: 1rem;
     row-gap: 1rem;
@@ -218,8 +218,7 @@ main > input[type="radio"]:checked + label::after {
 
 #nav-home:checked ~ .nav.home,
 #nav-blog:checked ~ .nav.blog,
-#nav-projects:checked ~ .nav.projects,
-#nav-about:checked ~ .nav.about {
+#nav-projects:checked ~ .nav.projects {
     display: flex;
 }
 
