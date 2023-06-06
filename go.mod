@@ -1,4 +1,4 @@
-module github.com/topisenpai/topi.wtf
+module github.com/topi314/topi.wtf
 
 go 1.20
 
