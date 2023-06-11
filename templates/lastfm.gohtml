@@ -1,7 +1,7 @@
 <h2>I'm currently listening to:</h2>
 <div id="song">
     {{ if eq .Track nil }}
-        <div>noting</div>
+        <div>nothing</div>
     {{ else }}
         <img src="{{ .Track.Artwork }}" alt="{{ .Track.Album }} Artwork"/>
         <div id="info">
