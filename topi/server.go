@@ -14,14 +14,15 @@ import (
 
 type ExecuteTemplateFunc func(wr io.Writer, name string, data any) error
 
-func NewServer(version string, cfg Config, client *githubv4.Client, md goldmark.Markdown, assets http.FileSystem, tmpl ExecuteTemplateFunc) *Server {
+func NewServer(version string, cfg Config, httpClient *http.Client, githubClient *githubv4.Client, md goldmark.Markdown, assets http.FileSystem, tmpl ExecuteTemplateFunc) *Server {
 	s := &Server{
-		version: version,
-		cfg:     cfg,
-		client:  client,
-		md:      md,
-		assets:  assets,
-		tmpl:    tmpl,
+		version:      version,
+		cfg:          cfg,
+		httpClient:   httpClient,
+		githubClient: githubClient,
+		md:           md,
+		assets:       assets,
+		tmpl:         tmpl,
 	}
 
 	s.server = &http.Server{
@@ -33,14 +34,14 @@ func NewServer(version string, cfg Config, client *githubv4.Client, md goldmark.
 }
 
 type Server struct {
-	version    string
-	cfg        Config
-	categoryID githubv4.ID
-	client     *githubv4.Client
-	server     *http.Server
-	md         goldmark.Markdown
-	assets     http.FileSystem
-	tmpl       ExecuteTemplateFunc
+	version      string
+	cfg          Config
+	httpClient   *http.Client
+	githubClient *githubv4.Client
+	server       *http.Server
+	md           goldmark.Markdown
+	assets       http.FileSystem
+	tmpl         ExecuteTemplateFunc
 }
 
 func (s *Server) Start() {

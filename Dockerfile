@@ -24,4 +24,4 @@ COPY --from=build /build/topi.wtf /bin/topi.wtf
 
 EXPOSE 80
 
-ENTRYPOINT ["/bin/topi.wtf"]
+ENTRYPOINT ["/bin/topi.wtf", "-config", "/etc/topi.wtf/config.yml"]

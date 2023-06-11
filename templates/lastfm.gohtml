@@ -1,0 +1,16 @@
+<h2>I'm currently listening to:</h2>
+<div id="song">
+    {{ if eq .Track nil }}
+        <div>noting</div>
+    {{ else }}
+        <img src="{{ .Track.Artwork }}" alt="{{ .Track.Album }} Artwork"/>
+        <div id="info">
+            <span>Song</span>
+            <a href="{{ .Track.URL }}" target="_blank">{{ .Track.Name }}</a>
+            <span>Artist</span>
+            <a href="{{ .Track.ArtistURL }}" target="_blank">{{ .Track.Artist }}</a>
+            <span>Album</span>
+            <span>{{ .Track.Album}}</span>
+        </div>
+    {{ end }}
+</div>

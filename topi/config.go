@@ -2,49 +2,98 @@ package topi
 
 import (
 	"fmt"
+	"golang.org/x/exp/slog"
+	"gopkg.in/yaml.v3"
+	"os"
 	"strings"
 	"time"
 )
 
+func LoadConfig(path string) (Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return Config{}, err
+	}
+
+	var cfg Config
+	if err = yaml.NewDecoder(file).Decode(&cfg); err != nil {
+		return Config{}, err
+	}
+	return cfg, nil
+}
+
 type Config struct {
-	Debug      bool         `cfg:"debug"`
-	DevMode    bool         `cfg:"dev_mode"`
-	ListenAddr string       `cfg:"listen_addr"`
-	Blog       BlogConfig   `cfg:"blog"`
-	GitHub     GitHubConfig `cfg:"github"`
-	Cache      *CacheConfig `cfg:"cache"`
+	Log        LogConfig    `yaml:"log"`
+	Debug      bool         `yaml:"debug"`
+	DevMode    bool         `yaml:"dev_mode"`
+	ListenAddr string       `yaml:"listen_addr"`
+	GitHub     GitHubConfig `yaml:"github"`
+	Cache      *CacheConfig `yaml:"cache"`
+	LastFM     LastFMConfig `yaml:"lastfm"`
 }
 
 func (c Config) String() string {
-	return fmt.Sprintf("\n DevMode: %t\n Debug: %t\n ListenAddr: %s\n GitHub: %s\n Cache: %s\n", c.DevMode, c.Debug, c.ListenAddr, c.GitHub, c.Cache)
+	return fmt.Sprintf("\n Log: %s\n DevMode: %t\n Debug: %t\n ListenAddr: %s\n GitHub: %s\n Cache: %s\n LastFM: %s\n",
+		c.Log,
+		c.DevMode,
+		c.Debug,
+		c.ListenAddr,
+		c.GitHub,
+		c.Cache,
+		c.LastFM,
+	)
 }
 
-type BlogConfig struct {
-	Repository string `cfg:"repository"`
-	User       string `cfg:"user"`
-	Category   string `cfg:"category"`
+type LogConfig struct {
+	Level     slog.Level `yaml:"level"`
+	Format    string     `yaml:"format"`
+	AddSource bool       `yaml:"add_source"`
 }
 
-func (c BlogConfig) String() string {
-	return fmt.Sprintf("\n   Repository: %s\n   User: %s\n   Category: %s", c.Repository, c.User, c.Category)
+func (c LogConfig) String() string {
+	return fmt.Sprintf("\n  Level: %s\n  Format: %s\n  AddSource: %t\n",
+		c.Level,
+		c.Format,
+		c.AddSource,
+	)
 }
 
 type GitHubConfig struct {
-	AccessToken  string `cfg:"access_token"`
-	ClientID     string `cfg:"client_id"`
-	ClientSecret string `cfg:"client_secret"`
-	RedirectURL  string `cfg:"redirect_url"`
+	AccessToken string `yaml:"access_token"`
+	User        string `yaml:"user"`
 }
 
 func (c GitHubConfig) String() string {
-	return fmt.Sprintf("\n  AccessToken: %s\n  ClientID: %s\n  ClientSecret: %s\n  RedirectURL: %s", strings.Repeat("*", len(c.AccessToken)), c.ClientID, strings.Repeat("*", len(c.ClientSecret)), c.RedirectURL)
+	return fmt.Sprintf("\n  AccessToken: %s\n  User: %s",
+		strings.Repeat("*", len(c.AccessToken)),
+		c.User,
+	)
 }
 
 type CacheConfig struct {
-	Size int           `cfg:"size"`
-	TTL  time.Duration `cfg:"ttl"`
+	Size int           `yaml:"size"`
+	TTL  time.Duration `yaml:"ttl"`
 }
 
 func (c CacheConfig) String() string {
-	return fmt.Sprintf("\n  Size: %d\n  TTL: %s\n", c.Size, c.TTL)
+	return fmt.Sprintf("\n  Size: %d\n  TTL: %s",
+		c.Size,
+		c.TTL,
+	)
+}
+
+type LastFMConfig struct {
+	Username string        `yaml:"username"`
+	APIKey   string        `yaml:"api_key"`
+	Size     int           `yaml:"size"`
+	TTL      time.Duration `yaml:"ttl"`
+}
+
+func (c LastFMConfig) String() string {
+	return fmt.Sprintf("\n  Username: %s\n  APIKey: %s\n  Size: %d\n  TTL: %s",
+		c.Username,
+		strings.Repeat("*", len(c.APIKey)),
+		c.Size,
+		c.TTL,
+	)
 }

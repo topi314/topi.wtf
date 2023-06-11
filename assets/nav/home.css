@@ -1,12 +1,51 @@
-
 #home a {
     color: var(--link-color);
 }
 
-#home a a:hover {
+#home a:hover {
     color: var(--link-color-hover);
 }
 
-#home a a:visited {
+#home a:visited {
     color: var(--link-color-visited);
+}
+
+#lastfm {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1rem;
+    border-radius: 1rem;
+    background-color: var(--bg-primary);
+}
+
+#lastfm h2 {
+    margin: 0;
+}
+
+#song {
+    display: flex;
+    gap: 1rem;
+}
+
+#song img {
+    width: 5rem;
+    height: 5rem;
+    border-radius: 1rem;
+}
+
+#info {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+
+    align-items: start;
+}
+
+#info > *:nth-child(2n -1 ) {
+    font-weight: bold;
+}
+
+#info > *:nth-child(2n) {
+    color: var(--text-secondary) !important;
 }

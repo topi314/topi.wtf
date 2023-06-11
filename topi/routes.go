@@ -2,9 +2,9 @@ package topi
 
 import (
 	"bytes"
-	"context"
-	"errors"
 	"fmt"
+	"github.com/alecthomas/chroma/v2"
+	"golang.org/x/exp/slog"
 	"io"
 	"log"
 	"net/http"
@@ -30,7 +30,8 @@ func (s *Server) Routes() http.Handler {
 	r.Use(middleware.Compress(5))
 	r.Use(middleware.Maybe(
 		middleware.RequestLogger(&middleware.DefaultLogFormatter{
-			Logger: log.Default(),
+			Logger:  log.Default(),
+			NoColor: true,
 		}),
 		func(r *http.Request) bool {
 			// Don't log requests for assets
@@ -41,29 +42,35 @@ func (s *Server) Routes() http.Handler {
 	r.Use(middleware.Heartbeat("/ping"))
 
 	r.Mount("/assets", http.FileServer(s.assets))
-	r.HandleFunc("/dark.css", s.theme(true))
-	r.HandleFunc("/light.css", s.theme(false))
-	r.Handle("/favicon.ico", s.file("/assets/favicon.png"))
-	r.Handle("/favicon.png", s.file("/assets/favicon.png"))
-	r.Handle("/favicon-light.png", s.file("/assets/favicon-light.png"))
+	r.Get("/dark.css", s.theme(StyleDark))
+	r.Get("/light.css", s.theme(StyleLight))
 	r.Handle("/robots.txt", s.file("/assets/robots.txt"))
 
+	stampedeMiddleware := func(handler http.Handler) http.Handler { return handler }
+	lastFMStampedeMiddleware := func(handler http.Handler) http.Handler { return handler }
+	if s.cfg.Cache != nil && s.cfg.Cache.Size > 0 && s.cfg.Cache.TTL > 0 {
+		stampedeMiddleware = stampede.HandlerWithKey(s.cfg.Cache.Size, s.cfg.Cache.TTL, cacheKeyFunc)
+	}
+	if s.cfg.LastFM.Size > 0 && s.cfg.LastFM.TTL > 0 {
+		lastFMStampedeMiddleware = stampede.HandlerWithKey(s.cfg.LastFM.Size, s.cfg.LastFM.TTL, cacheKeyFunc)
+	}
+
 	r.Group(func(r chi.Router) {
-		if s.cfg.Cache != nil && s.cfg.Cache.Size > 0 {
-			r.Use(stampede.HandlerWithKey(s.cfg.Cache.Size, s.cfg.Cache.TTL, cacheKeyFunc))
-		}
 		r.Route("/api", func(r chi.Router) {
-			r.Route("/posts", func(r chi.Router) {
-				r.Get("/", s.posts)
-				r.Head("/", s.posts)
-			})
 			r.Route("/repositories", func(r chi.Router) {
+				r.Use(stampedeMiddleware)
 				r.Get("/", s.repositories)
-				r.Head("/", s.repositories)
+			})
+			r.Route("/lastfm", func(r chi.Router) {
+				r.Use(lastFMStampedeMiddleware)
+				r.Get("/", s.lastfm)
 			})
 		})
-		r.Get("/", s.index)
-		r.Head("/", s.index)
+		r.Route("/", func(r chi.Router) {
+			r.Use(stampedeMiddleware)
+			r.Get("/", s.index)
+			r.Head("/", s.index)
+		})
 	})
 	r.NotFound(s.redirectRoot)
 	return r
@@ -80,31 +87,27 @@ func cacheKeyFunc(r *http.Request) uint64 {
 
 func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
 	after := r.URL.Query().Get("after")
-	vars, err := s.FetchRepositories(r.Context(), after)
+	ctx := r.Context()
+	vars, err := s.FetchRepositories(ctx, after)
 	if err != nil {
-		s.log(r, "api request", err)
+		slog.ErrorCtx(ctx, "failed to fetch repositories", slog.Any("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err = s.tmpl(w, "projects.gohtml", vars); err != nil {
-		s.log(r, "template", err)
+		slog.ErrorCtx(ctx, "failed to render projects template", slog.Any("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 }
 
-func (s *Server) posts(w http.ResponseWriter, r *http.Request) {
-	after := r.URL.Query().Get("after")
-	vars, err := s.FetchPosts(r.Context(), after)
-	if err != nil {
-		s.log(r, "api request", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+func (s *Server) lastfm(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	vars := s.FetchLastFM(ctx)
 
-	if err = s.tmpl(w, "blog.gohtml", vars); err != nil {
-		s.log(r, "template", err)
+	if err := s.tmpl(w, "lastfm.gohtml", vars); err != nil {
+		slog.ErrorCtx(ctx, "failed to render lastfm template", slog.Any("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -113,7 +116,7 @@ func (s *Server) posts(w http.ResponseWriter, r *http.Request) {
 func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	vars, err := s.FetchData(r.Context())
 	if err != nil {
-		s.prettyError(w, r, fmt.Errorf("failed to fetch data: %w", err), http.StatusInternalServerError)
+		s.error(w, r, fmt.Errorf("failed to fetch data: %w", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -122,7 +125,7 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = s.HighlightData(vars); err != nil {
-		s.prettyError(w, r, fmt.Errorf("failed to highlight data: %w", err), http.StatusInternalServerError)
+		s.error(w, r, fmt.Errorf("failed to highlight data: %w", err), http.StatusInternalServerError)
 		return
 	}
 
@@ -131,15 +134,11 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) theme(dark bool) http.HandlerFunc {
-	style := StyleDark
-	if !dark {
-		style = StyleLight
-	}
+func (s *Server) theme(style *chroma.Style) http.HandlerFunc {
 	cssBuff := new(bytes.Buffer)
 	if err := chtml.New(chtml.WithClasses(true), chtml.ClassPrefix("ch-")).WriteCSS(cssBuff, style); err != nil {
 		return func(w http.ResponseWriter, r *http.Request) {
-			s.prettyError(w, r, fmt.Errorf("failed to write CSS: %w", err), http.StatusInternalServerError)
+			s.error(w, r, fmt.Errorf("failed to write CSS: %w", err), http.StatusInternalServerError)
 		}
 	}
 
@@ -153,16 +152,9 @@ func (s *Server) redirectRoot(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-func (s *Server) log(r *http.Request, logType string, err error) {
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-		return
-	}
-	log.Printf("Error while handling %s(%s) %s: %s\n", logType, middleware.GetReqID(r.Context()), r.RequestURI, err)
-}
-
-func (s *Server) prettyError(w http.ResponseWriter, r *http.Request, err error, status int) {
+func (s *Server) error(w http.ResponseWriter, r *http.Request, err error, status int) {
 	if status == http.StatusInternalServerError {
-		s.log(r, "pretty request", err)
+		slog.ErrorCtx(r.Context(), "internal server error", slog.Any("error", err))
 	}
 	w.WriteHeader(status)
 
@@ -173,7 +165,7 @@ func (s *Server) prettyError(w http.ResponseWriter, r *http.Request, err error, 
 		"Path":      r.URL.Path,
 	}
 	if tmplErr := s.tmpl(w, "error.gohtml", vars); tmplErr != nil && tmplErr != http.ErrHandlerTimeout {
-		s.log(r, "template", tmplErr)
+		slog.ErrorCtx(r.Context(), "failed to render error template", slog.Any("error", tmplErr))
 	}
 }
 

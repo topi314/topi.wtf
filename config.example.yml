@@ -1,0 +1,22 @@
+log:
+  level: debug
+  format: text
+  add_source: true
+
+dev_mode: true
+debug: true
+listen_addr: 127.0.0.1:1234
+
+github:
+  access_token: ...
+  user: topi314
+
+cache:
+  size: 100
+  ttl: 10s
+
+lastfm:
+  api_key: ...
+  username: topi314
+  size: 10
+  ttl: 10s
