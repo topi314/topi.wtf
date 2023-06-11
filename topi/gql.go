@@ -39,45 +39,6 @@ type Repositories struct {
 	}
 }
 
-type Discussions struct {
-	Nodes []struct {
-		URL         string
-		Title       string
-		CreatedAt   time.Time
-		Body        string
-		UpvoteCount int
-		Comments    struct {
-			TotalCount int
-			Nodes      []struct {
-				Author struct {
-					Login     string
-					AvatarURL string
-				}
-				URL         string
-				CreatedAt   time.Time
-				UpvoteCount int
-				Body        string
-				Replies     struct {
-					TotalCount int
-					Nodes      []struct {
-						Author struct {
-							Login     string
-							AvatarURL string
-						}
-						URL       string
-						CreatedAt time.Time
-						Body      string
-					}
-				} `graphql:"replies(first: $replies)"`
-			}
-		} `graphql:"comments(first: $comments)"`
-	}
-	PageInfo struct {
-		EndCursor   string
-		HasNextPage bool
-	}
-}
-
 func parseRepositories(repositories Repositories) []Project {
 	projects := make([]Project, 0, len(repositories.Nodes))
 	for _, node := range repositories.Nodes {
