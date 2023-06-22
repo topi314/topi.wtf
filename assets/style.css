@@ -20,6 +20,7 @@
     --book: url("/assets/icons/dark/book.png");
     --fork: url("/assets/icons/dark/fork.png");
     --email: url("/assets/icons/dark/email.png");
+    --matrix: url("/assets/icons/dark/matrix.svg");
 }
 
 .light {
@@ -40,6 +41,7 @@
     --book: url("/assets/icons/light/book.png");
     --fork: url("/assets/icons/light/fork.png");
     --email: url("/assets/icons/light/email.png");
+    --matrix: url("/assets/icons/light/matrix.svg");
 }
 
 *,
@@ -148,6 +150,10 @@ header a {
     background-image: var(--email);
 }
 
+#matrix {
+    background-image: var(--matrix);
+}
+
 #theme-toggle {
     display: none;
 }
@@ -164,8 +170,6 @@ main {
     "home blog projects"
     "content content content";
     flex-grow: 1;
-    row-gap: 1rem;
-    padding: 1rem;
 }
 
 main > input[type="radio"] {
@@ -177,8 +181,7 @@ main > input[type="radio"] + label {
     font-size: 1.2rem;
     font-weight: 600;
     cursor: pointer;
-    padding: 0.5rem;
-    border-radius: 0.5rem;
+    padding: 1rem;
     transition: filter 0.2s ease-in-out;
 }
 
@@ -199,6 +202,7 @@ main > input[type="radio"]:checked + label::after {
     grid-area: content;
     flex-direction: column;
     gap: 1rem;
+    padding: 0 1rem 1rem 1rem;
 }
 
 #nav-home:checked ~ #home,
