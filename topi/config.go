@@ -2,11 +2,12 @@ package topi
 
 import (
 	"fmt"
-	"golang.org/x/exp/slog"
-	"gopkg.in/yaml.v3"
+	"log/slog"
 	"os"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 func LoadConfig(path string) (Config, error) {
@@ -45,16 +46,18 @@ func (c Config) String() string {
 }
 
 type LogConfig struct {
-	Level     slog.Level `yaml:"level"`
-	Format    string     `yaml:"format"`
-	AddSource bool       `yaml:"add_source"`
+	Level     slog.Level `cfg:"level"`
+	Format    string     `cfg:"format"`
+	AddSource bool       `cfg:"add_source"`
+	NoColor   bool       `cfg:"no_color"`
 }
 
 func (c LogConfig) String() string {
-	return fmt.Sprintf("\n  Level: %s\n  Format: %s\n  AddSource: %t\n",
+	return fmt.Sprintf("\n  Level: %s\n  Format: %s\n  AddSource: %t\n  NoColor: %t\n",
 		c.Level,
 		c.Format,
 		c.AddSource,
+		c.NoColor,
 	)
 }
 

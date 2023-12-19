@@ -4,9 +4,9 @@ import (
 	"context"
 	"embed"
 	"flag"
-	"golang.org/x/exp/slog"
 	"html/template"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -16,7 +16,10 @@ import (
 	chtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/dustin/go-humanize"
+	"github.com/mattn/go-colorable"
 	"github.com/shurcooL/githubv4"
+	"github.com/topi314/tint"
+	"github.com/topi314/topi.wtf/topi"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark-emoji"
 	"github.com/yuin/goldmark-highlighting/v2"
@@ -24,8 +27,6 @@ import (
 	"github.com/yuin/goldmark/renderer/html"
 	"go.abhg.dev/goldmark/anchor"
 	"golang.org/x/oauth2"
-
-	"github.com/topi314/topi.wtf/topi"
 )
 
 var (
@@ -120,16 +121,58 @@ func main() {
 	<-si
 }
 
+const (
+	ansiFaint         = "\033[2m"
+	ansiWhiteBold     = "\033[37;1m"
+	ansiYellowBold    = "\033[33;1m"
+	ansiCyanBold      = "\033[36;1m"
+	ansiCyanBoldFaint = "\033[36;1;2m"
+	ansiRedFaint      = "\033[31;2m"
+	ansiRedBold       = "\033[31;1m"
+
+	ansiRed     = "\033[31m"
+	ansiYellow  = "\033[33m"
+	ansiGreen   = "\033[32m"
+	ansiMagenta = "\033[35m"
+)
+
 func setupLogger(cfg topi.LogConfig) {
-	opts := &slog.HandlerOptions{
-		AddSource: cfg.AddSource,
-		Level:     cfg.Level,
-	}
 	var handler slog.Handler
-	if cfg.Format == "json" {
-		handler = slog.NewJSONHandler(os.Stdout, opts)
-	} else {
-		handler = slog.NewTextHandler(os.Stdout, opts)
+	switch cfg.Format {
+	case "json":
+		handler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
+			AddSource: cfg.AddSource,
+			Level:     cfg.Level,
+		})
+
+	case "text":
+		handler = tint.NewHandler(colorable.NewColorable(os.Stdout), &tint.Options{
+			AddSource: cfg.AddSource,
+			Level:     cfg.Level,
+			NoColor:   cfg.NoColor,
+			LevelColors: map[slog.Level]string{
+				slog.LevelDebug: ansiMagenta,
+				slog.LevelInfo:  ansiGreen,
+				slog.LevelWarn:  ansiYellow,
+				slog.LevelError: ansiRed,
+			},
+			Colors: map[tint.Kind]string{
+				tint.KindTime:            ansiYellowBold,
+				tint.KindSourceFile:      ansiCyanBold,
+				tint.KindSourceSeparator: ansiCyanBoldFaint,
+				tint.KindSourceLine:      ansiCyanBold,
+				tint.KindMessage:         ansiWhiteBold,
+				tint.KindKey:             ansiFaint,
+				tint.KindSeparator:       ansiFaint,
+				tint.KindValue:           ansiWhiteBold,
+				tint.KindErrorKey:        ansiRedFaint,
+				tint.KindErrorSeparator:  ansiFaint,
+				tint.KindErrorValue:      ansiRedBold,
+			},
+		})
+	default:
+		slog.Error("Unknown log format", slog.String("format", cfg.Format))
+		os.Exit(-1)
 	}
 	slog.SetDefault(slog.New(handler))
 }

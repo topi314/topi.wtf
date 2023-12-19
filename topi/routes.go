@@ -2,19 +2,21 @@ package topi
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
-	"github.com/alecthomas/chroma/v2"
-	"golang.org/x/exp/slog"
 	"io"
 	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/alecthomas/chroma/v2"
 	chtml "github.com/alecthomas/chroma/v2/formatters/html"
 	"github.com/alecthomas/chroma/v2/styles"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/stampede"
+	"github.com/topi314/slog-chi"
 )
 
 var (
@@ -28,16 +30,16 @@ func (s *Server) Routes() http.Handler {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Compress(5))
-	r.Use(middleware.Maybe(
-		middleware.RequestLogger(&middleware.DefaultLogFormatter{
-			Logger:  log.Default(),
-			NoColor: true,
-		}),
-		func(r *http.Request) bool {
-			// Don't log requests for assets
-			return !strings.HasPrefix(r.URL.Path, "/assets")
+	r.Use(slogchi.NewWithConfig(slog.Default(), slogchi.Config{
+		DefaultLevel:     slog.LevelInfo,
+		ClientErrorLevel: slog.LevelDebug,
+		ServerErrorLevel: slog.LevelError,
+		WithRequestID:    true,
+		Filters: []slogchi.Filter{
+			slogchi.IgnorePathPrefix("/assets"),
 		},
-	))
+	}))
+	r.Use(cacheControl)
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Heartbeat("/ping"))
 
@@ -90,13 +92,13 @@ func (s *Server) repositories(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	vars, err := s.FetchRepositories(ctx, after)
 	if err != nil {
-		slog.ErrorCtx(ctx, "failed to fetch repositories", slog.Any("error", err))
+		slog.ErrorContext(ctx, "failed to fetch repositories", slog.Any("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
 	if err = s.tmpl(w, "projects.gohtml", vars); err != nil {
-		slog.ErrorCtx(ctx, "failed to render projects template", slog.Any("error", err))
+		slog.ErrorContext(ctx, "failed to render projects template", slog.Any("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -107,7 +109,7 @@ func (s *Server) lastfm(w http.ResponseWriter, r *http.Request) {
 	vars := s.FetchLastFM(ctx)
 
 	if err := s.tmpl(w, "lastfm.gohtml", vars); err != nil {
-		slog.ErrorCtx(ctx, "failed to render lastfm template", slog.Any("error", err))
+		slog.ErrorContext(ctx, "failed to render lastfm template", slog.Any("error", err))
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -154,7 +156,7 @@ func (s *Server) redirectRoot(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) error(w http.ResponseWriter, r *http.Request, err error, status int) {
 	if status == http.StatusInternalServerError {
-		slog.ErrorCtx(r.Context(), "internal server error", slog.Any("error", err))
+		slog.ErrorContext(r.Context(), "internal server error", slog.Any("error", err))
 	}
 	w.WriteHeader(status)
 
@@ -164,8 +166,8 @@ func (s *Server) error(w http.ResponseWriter, r *http.Request, err error, status
 		"RequestID": middleware.GetReqID(r.Context()),
 		"Path":      r.URL.Path,
 	}
-	if tmplErr := s.tmpl(w, "error.gohtml", vars); tmplErr != nil && tmplErr != http.ErrHandlerTimeout {
-		slog.ErrorCtx(r.Context(), "failed to render error template", slog.Any("error", tmplErr))
+	if tmplErr := s.tmpl(w, "error.gohtml", vars); tmplErr != nil && !errors.Is(tmplErr, http.ErrHandlerTimeout) {
+		slog.ErrorContext(r.Context(), "failed to render error template", slog.Any("error", tmplErr))
 	}
 }
 
@@ -179,4 +181,16 @@ func (s *Server) file(path string) http.HandlerFunc {
 		defer file.Close()
 		_, _ = io.Copy(w, file)
 	}
+}
+
+func cacheControl(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/assets/") {
+			w.Header().Set("Cache-Control", "public, max-age=86400")
+			next.ServeHTTP(w, r)
+			return
+		}
+		w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+		next.ServeHTTP(w, r)
+	})
 }

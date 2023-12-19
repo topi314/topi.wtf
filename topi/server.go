@@ -1,6 +1,7 @@
 package topi
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -45,7 +46,7 @@ type Server struct {
 }
 
 func (s *Server) Start() {
-	if err := s.server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatalln("Error while listening:", err)
 	}
 }
