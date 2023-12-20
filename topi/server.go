@@ -4,8 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
+	"log/slog"
 	"net/http"
+	"os"
 	"runtime"
 	"time"
 
@@ -47,13 +48,14 @@ type Server struct {
 
 func (s *Server) Start() {
 	if err := s.server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-		log.Fatalln("Error while listening:", err)
+		slog.Error("Error while listening", slog.Any("err", err))
+		os.Exit(-1)
 	}
 }
 
 func (s *Server) Close() {
 	if err := s.server.Close(); err != nil {
-		log.Println("Error while closing server:", err)
+		slog.Error("Error while closing server", slog.Any("err", err))
 	}
 }
 

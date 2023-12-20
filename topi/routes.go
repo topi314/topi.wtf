@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -132,7 +131,7 @@ func (s *Server) index(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err = s.tmpl(w, "index.gohtml", vars); err != nil {
-		log.Println("failed to execute template:", err)
+		slog.ErrorContext(r.Context(), "failed to execute template", slog.Any("err", err))
 	}
 }
 
